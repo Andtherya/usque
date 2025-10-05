@@ -1,35 +1,31 @@
-name: Build and Release
+name: Build USQUE Windows x64
 
+# 手动触发
 on:
-  push:
-    tags:
-      - 'v*'
-  workflow_dispatch:  # Allows manual triggering
+  workflow_dispatch:
 
 jobs:
-  release:
-    name: Build and Release
+  build:
     runs-on: ubuntu-latest
-    permissions:
-      contents: write  # Required for GitHub Releases
 
     steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
+      - name: Checkout code
+        uses: actions/checkout@v3
 
       - name: Set up Go
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@v4
         with:
-          go-version: 1.24.2
+          go-version: '1.22'
 
-      - name: Install GoReleaser
+      - name: Build static Windows binary
         run: |
-          curl -sL https://github.com/goreleaser/goreleaser/releases/latest/download/goreleaser_Linux_x86_64.tar.gz | tar xz -C /tmp
-          sudo mv /tmp/goreleaser /usr/local/bin/
+          echo "开始编译 Windows 64 位静态二进制"
+          export CGO_ENABLED=0
+          GOOS=windows GOARCH=amd64 go build -ldflags="-s -w" -o usque_windows_amd64.exe main.go
+          echo "编译完成"
 
-      - name: Run GoReleaser
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: goreleaser release --clean
+      - name: Upload binary
+        uses: actions/upload-artifact@v4
+        with:
+          name: usque-windows-binary
+          path: usque_windows_amd64.exe
